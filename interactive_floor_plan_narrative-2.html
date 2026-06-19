@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surds - Pop Architecture Stacking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <!-- Bold fonts for the Pop/Brutalist aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&family=Caveat:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f4f0ea; /* Warm paper */
+            --ink: #050505;
+            --pop-yellow: #FFD60A;
+            --pop-blue: #0A84FF;
+            --pop-red: #FF453A;
+            --pop-green: #30D158;
+            --pop-purple: #BF5AF2;
+            --pop-pink: #FF375F;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--ink);
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); border-left: 2px solid var(--ink); }
+        ::-webkit-scrollbar-thumb { background: var(--ink); border: 2px solid var(--bg-color); }
+
+        /* The Core "Stacking" Logic: Hard, offset black shadows */
+        .brutal-stack {
+            border: 4px solid var(--ink);
+            box-shadow: 12px 12px 0px var(--ink);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        /* SVG specific hard shadow to make elements look like thick cardboard stickers */
+        .svg-sticker {
+            filter: drop-shadow(8px 8px 0px #050505);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none; 
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #scroll-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+
+        .step {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            pointer-events: none; 
+        }
+
+        .step-content {
+            background: #ffffff;
+            padding: 2.5rem;
+            max-width: 420px;
+            opacity: 0; 
+            transform: translateY(30px);
+            pointer-events: auto;
+        }
+
+        /* Doodle styles */
+        .doodle-text {
+            font-family: 'Caveat', cursive;
+            font-size: 42px;
+            font-weight: 700;
+        }
+        .doodle-sub {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .doodle-path {
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+        }
+        
+        /* Hard geometric pulses instead of soft glows */
+        .pulse-ring {
+            animation: hardPulse 1.5s infinite;
+        }
+        @keyframes hardPulse {
+            0% { transform: scale(1); opacity: 1; stroke-width: 4px; }
+            100% { transform: scale(2.5); opacity: 0; stroke-width: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <svg viewBox="0 0 2400 1400" preserveAspectRatio="xMidYMid meet">
+            
+            <defs>
+                <!-- Thick blueprint Grid Pattern -->
+                <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+                    <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#d1ccc0" stroke-width="2" />
+                    <circle cx="0" cy="0" r="2" fill="#d1ccc0" />
+                </pattern>
+
+                <!-- BRUTALIST STICKERS -->
+                
+                <!-- Desk Pod -->
+                <g id="def-desk-pod" class="svg-sticker">
+                    <rect x="-10" y="-10" width="220" height="160" fill="#ffffff" stroke="#050505" stroke-width="4" />
+                    <rect x="0" y="0" width="200" height="140" fill="#f4f0ea" stroke="#050505" stroke-width="4"/>
+                    <line x1="100" y1="0" x2="100" y2="140" stroke="#050505" stroke-width="4"/>
+                    <line x1="0" y1="70" x2="200" y2="70" stroke="#050505" stroke-width="4"/>
+                    
+                    <!-- Neon Pop Chairs -->
+                    <circle cx="50" cy="35" r="18" fill="#FFD60A" stroke="#050505" stroke-width="4" />
+                    <circle cx="150" cy="35" r="18" fill="#0A84FF" stroke="#050505" stroke-width="4" />
+                    <circle cx="50" cy="105" r="18" fill="#30D158" stroke="#050505" stroke-width="4" />
+                    <circle cx="150" cy="105" r="18" fill="#FF453A" stroke="#050505" stroke-width="4" />
+                </g>
+
+                <!-- Pop Sofa -->
+                <g id="def-sofa" class="svg-sticker">
+                    <rect x="-5" y="-5" width="130" height="60" fill="#BF5AF2" stroke="#050505" stroke-width="4" />
+                    <rect x="0" y="0" width="20" height="50" fill="#9e47c9" stroke="#050505" stroke-width="4" />
+                    <rect x="100" y="0" width="20" height="50" fill="#9e47c9" stroke="#050505" stroke-width="4" />
+                    <rect x="25" y="10" width="70" height="40" fill="#d382ff" stroke="#050505" stroke-width="4" />
+                </g>
+
+                <!-- Conference Chair -->
+                <g id="def-conf-chair">
+                    <rect x="0" y="0" width="36" height="36" fill="#FF375F" stroke="#050505" stroke-width="4" />
+                    <rect x="6" y="6" width="24" height="10" fill="#ffffff" stroke="#050505" stroke-width="3" />
+                </g>
+
+                <!-- Brutalist Fan -->
+                <g id="def-fan" class="svg-sticker">
+                    <circle cx="0" cy="0" r="45" fill="#ffffff" stroke="#050505" stroke-width="4" />
+                    <g class="spin-target">
+                        <circle cx="0" cy="0" r="15" fill="#050505"/>
+                        <path d="M -8 -15 L 8 -15 L 12 -40 L -12 -40 Z" fill="#FFD60A" stroke="#050505" stroke-width="3" />
+                        <path d="M -8 15 L 8 15 L 12 40 L -12 40 Z" fill="#FFD60A" stroke="#050505" stroke-width="3" />
+                        <path d="M -15 -8 L -15 8 L -40 12 L -40 -12 Z" fill="#FFD60A" stroke="#050505" stroke-width="3" />
+                        <path d="M 15 -8 L 15 8 L 40 12 L 40 -12 Z" fill="#FFD60A" stroke="#050505" stroke-width="3" />
+                    </g>
+                </g>
+
+                <!-- Geometric Plant -->
+                <g id="def-plant" class="svg-sticker">
+                    <circle cx="0" cy="0" r="30" fill="#ffffff" stroke="#050505" stroke-width="4" />
+                    <!-- Abstract geometric leaves -->
+                    <path d="M 0 0 L -25 -25 L 0 -15 Z" fill="#30D158" stroke="#050505" stroke-width="3"/>
+                    <path d="M 0 0 L 25 -25 L 15 0 Z" fill="#30D158" stroke="#050505" stroke-width="3"/>
+                    <path d="M 0 0 L 25 25 L 0 15 Z" fill="#30D158" stroke="#050505" stroke-width="3"/>
+                    <path d="M 0 0 L -25 25 L -15 0 Z" fill="#30D158" stroke="#050505" stroke-width="3"/>
+                    <circle cx="0" cy="0" r="10" fill="#050505"/>
+                </g>
+            </defs>
+
+            <!-- LAYER 1: Base Architectural Outline (Painted solid blocks) -->
+            <g id="base-plan">
+                <rect width="2400" height="1400" fill="url(#grid)" />
+                
+                <g stroke="#050505" stroke-width="8">
+                    <!-- Open Office (Pop Blue) -->
+                    <rect x="200" y="200" width="800" height="1000" fill="#e0f0ff" />
+                    <!-- Corridor Walls -->
+                    <line x1="1000" y1="600" x2="1400" y2="600" stroke-width="12" />
+                    <line x1="1000" y1="800" x2="1400" y2="800" stroke-width="12" />
+                    <!-- Conference Room (Pop Yellow) -->
+                    <rect x="1400" y="200" width="800" height="500" fill="#fffbe0" />
+                    <!-- Breakroom / Kitchen (Pop Green) -->
+                    <rect x="1400" y="700" width="400" height="500" fill="#e5fbe9" />
+                    <!-- Exec Lounge (Pop Pink) -->
+                    <rect x="1800" y="700" width="400" height="500" fill="#ffe5eb" />
+                </g>
+
+                <!-- Doors (Cutouts as stark black blocks) -->
+                <rect x="980" y="650" width="40" height="100" fill="#050505" />
+                <rect x="1380" y="650" width="40" height="100" fill="#050505" />
+                <rect x="1500" y="680" width="100" height="40" fill="#050505" />
+                <rect x="1780" y="900" width="40" height="100" fill="#050505" />
+
+                <!-- Blueprint Bold Typography -->
+                <text x="240" y="260" fill="#050505" font-size="48" font-weight="900" font-family="Space Grotesk">ZONE 01: OPEN WORKSPACE</text>
+                <text x="1440" y="260" fill="#050505" font-size="48" font-weight="900" font-family="Space Grotesk">ZONE 02: BOARDROOM</text>
+                <text x="1440" y="760" fill="#050505" font-size="36" font-weight="900" font-family="Space Grotesk">ZONE 03: CAFE</text>
+                <text x="1840" y="760" fill="#050505" font-size="36" font-weight="900" font-family="Space Grotesk">ZONE 04: LOUNGE</text>
+            </g>
+
+            <!-- LAYER 2: Open Office Workstations -->
+            <g id="layer-workstations" class="sticker-group" opacity="0">
+                <use href="#def-desk-pod" x="300" y="400" />
+                <use href="#def-desk-pod" x="600" y="400" />
+                <use href="#def-desk-pod" x="300" y="650" />
+                <use href="#def-desk-pod" x="600" y="650" />
+                <use href="#def-desk-pod" x="300" y="900" />
+                <use href="#def-desk-pod" x="600" y="900" />
+            </g>
+
+            <!-- LAYER 3: Conference & Cafe -->
+            <g id="layer-conf-cafe" class="sticker-group" opacity="0">
+                <!-- Huge Boardroom Table Sticker -->
+                <g class="svg-sticker" transform="translate(1600, 350)">
+                    <rect x="0" y="0" width="400" height="200" fill="#050505" />
+                    <!-- Inner table -->
+                    <rect x="10" y="10" width="380" height="180" fill="#0A84FF" />
+                    <!-- Chairs -->
+                    <use href="#def-conf-chair" x="50" y="-18" />
+                    <use href="#def-conf-chair" x="150" y="-18" />
+                    <use href="#def-conf-chair" x="250" y="-18" />
+                    <use href="#def-conf-chair" x="50" y="182" />
+                    <use href="#def-conf-chair" x="150" y="182" />
+                    <use href="#def-conf-chair" x="250" y="182" />
+                </g>
+                <!-- TV Screen -->
+                <rect x="2150" y="350" width="40" height="200" fill="#050505" class="svg-sticker" />
+
+                <!-- Kitchen Island -->
+                <g class="svg-sticker" transform="translate(1500, 850)">
+                    <rect x="0" y="0" width="200" height="100" fill="#FFD60A" stroke="#050505" stroke-width="4" />
+                    <circle cx="40" cy="50" r="20" fill="#ffffff" stroke="#050505" stroke-width="4" /> <!-- Sink -->
+                    <rect x="100" y="20" width="60" height="60" fill="#FF453A" stroke="#050505" stroke-width="4" /> <!-- Stove -->
+                </g>
+            </g>
+
+            <!-- LAYER 4: Lounge, Plants & Fans -->
+            <g id="layer-decor" class="sticker-group" opacity="0">
+                <!-- Lounge Area -->
+                <g class="svg-sticker" transform="translate(1850, 850)">
+                    <!-- Rug (Black & White Checker) -->
+                    <rect x="0" y="0" width="300" height="200" fill="#ffffff" stroke="#050505" stroke-width="4" />
+                    <rect x="0" y="0" width="50" height="50" fill="#050505"/> <rect x="100" y="0" width="50" height="50" fill="#050505"/> <rect x="200" y="0" width="50" height="50" fill="#050505"/>
+                    <rect x="50" y="50" width="50" height="50" fill="#050505"/> <rect x="150" y="50" width="50" height="50" fill="#050505"/> <rect x="250" y="50" width="50" height="50" fill="#050505"/>
+                    <rect x="0" y="100" width="50" height="50" fill="#050505"/> <rect x="100" y="100" width="50" height="50" fill="#050505"/> <rect x="200" y="100" width="50" height="50" fill="#050505"/>
+                    <rect x="50" y="150" width="50" height="50" fill="#050505"/> <rect x="150" y="150" width="50" height="50" fill="#050505"/> <rect x="250" y="150" width="50" height="50" fill="#050505"/>
+                    <!-- Sofas -->
+                    <use href="#def-sofa" x="90" y="20" />
+                    <use href="#def-sofa" x="20" y="70" transform="rotate(-90, 20, 70)" />
+                </g>
+
+                <!-- Plants -->
+                <use href="#def-plant" x="250" y="250" />
+                <use href="#def-plant" x="950" y="250" />
+                <use href="#def-plant" x="2150" y="250" />
+                <use href="#def-plant" x="2150" y="1150" />
+
+                <!-- Ceiling Fans -->
+                <use href="#def-fan" x="600" y="550" />
+                <use href="#def-fan" x="1800" y="450" />
+                <use href="#def-fan" x="1600" y="900" />
+                <use href="#def-fan" x="2000" y="900" />
+            </g>
+
+            <!-- LAYER 5: People (Solid geometric dots) -->
+            <g id="layer-people" opacity="0">
+                <circle id="person-1" r="20" fill="#050505" class="svg-sticker" />
+                <circle id="person-2" r="20" fill="#050505" class="svg-sticker" />
+                <circle id="person-3" r="20" fill="#050505" class="svg-sticker" />
+                <circle id="person-4" r="20" fill="#050505" class="svg-sticker" />
+            </g>
+
+            <!-- LAYER 6: Sensor Pop-ups & Telemetry -->
+            <g id="layer-doodles">
+                
+                <!-- Doodle 1: Occupancy - Open Office -->
+                <g class="doodle-group" opacity="0">
+                    <path class="doodle-path" d="M -100 550 Q 200 400 600 550" fill="none" stroke="#050505" stroke-width="8" stroke-dasharray="20,15" stroke-linecap="square" />
+                    
+                    <!-- Hard target node -->
+                    <rect x="580" y="530" width="40" height="40" fill="#FF453A" stroke="#050505" stroke-width="6" transform="rotate(45, 600, 550)" />
+                    
+                    <!-- Brutalist Data Card -->
+                    <g transform="translate(-150, 450) rotate(-5)">
+                        <!-- The offset shadow rectangle -->
+                        <rect x="12" y="12" width="340" height="140" fill="#050505" />
+                        <!-- The main colored card -->
+                        <rect x="0" y="0" width="340" height="140" fill="#FF453A" stroke="#050505" stroke-width="6" />
+                        <!-- Internal graphic -->
+                        <circle cx="40" cy="40" r="15" fill="#ffffff" stroke="#050505" stroke-width="4" />
+                        <text x="70" y="50" fill="#050505" class="doodle-text">Motion Sensor</text>
+                        <rect x="20" y="80" width="300" height="40" fill="#ffffff" stroke="#050505" stroke-width="4" />
+                        <text x="35" y="108" fill="#050505" class="doodle-sub">STATUS: <tspan font-weight="900" fill="#FF453A">DETECTED</tspan></text>
+                    </g>
+                </g>
+
+                <!-- Doodle 2: HVAC/Temp - Conference -->
+                <g class="doodle-group" opacity="0">
+                    <path class="doodle-path" d="M 2600 300 Q 2200 200 1800 450" fill="none" stroke="#050505" stroke-width="8" stroke-dasharray="20,15" stroke-linecap="square" />
+                    
+                    <!-- Hard target node -->
+                    <rect x="1780" y="430" width="40" height="40" fill="#0A84FF" stroke="#050505" stroke-width="6" transform="rotate(45, 1800, 450)" />
+                    
+                    <!-- Brutalist Data Card -->
+                    <g transform="translate(2250, 150) rotate(8)">
+                        <rect x="12" y="12" width="340" height="140" fill="#050505" />
+                        <rect x="0" y="0" width="340" height="140" fill="#0A84FF" stroke="#050505" stroke-width="6" />
+                        <circle cx="40" cy="40" r="15" fill="#FFD60A" stroke="#050505" stroke-width="4" />
+                        <text x="70" y="50" fill="#050505" class="doodle-text">Thermostat 02</text>
+                        <rect x="20" y="80" width="300" height="40" fill="#ffffff" stroke="#050505" stroke-width="4" />
+                        <text x="35" y="108" fill="#050505" class="doodle-sub">SET POINT: <tspan font-weight="900" fill="#0A84FF">72.4°F</tspan></text>
+                    </g>
+                </g>
+
+                <!-- Doodle 3: Air Quality - Kitchen -->
+                <g class="doodle-group" opacity="0">
+                    <path class="doodle-path" d="M 2600 1100 Q 2000 1300 1600 900" fill="none" stroke="#050505" stroke-width="8" stroke-dasharray="20,15" stroke-linecap="square" />
+                    
+                    <!-- Hard target node -->
+                    <rect x="1580" y="880" width="40" height="40" fill="#30D158" stroke="#050505" stroke-width="6" transform="rotate(45, 1600, 900)" />
+                    
+                    <!-- Brutalist Data Card -->
+                    <g transform="translate(2200, 1000) rotate(-3)">
+                        <rect x="12" y="12" width="340" height="140" fill="#050505" />
+                        <rect x="0" y="0" width="340" height="140" fill="#30D158" stroke="#050505" stroke-width="6" />
+                        <circle cx="40" cy="40" r="15" fill="#BF5AF2" stroke="#050505" stroke-width="4" />
+                        <text x="70" y="50" fill="#050505" class="doodle-text">IAQ Monitor</text>
+                        <rect x="20" y="80" width="300" height="40" fill="#ffffff" stroke="#050505" stroke-width="4" />
+                        <text x="35" y="108" fill="#050505" class="doodle-sub" id="co2-text">CO2 LEVEL: <tspan font-weight="900" fill="#30D158">450 PPM</tspan></text>
+                    </g>
+                </g>
+
+            </g>
+        </svg>
+    </div>
+
+    <!-- Scroll Wrapper -->
+    <div id="scroll-wrapper">
+        
+        <!-- Step 0: Intro (Centered initially) -->
+        <div class="step justify-center text-center pb-32">
+            <div class="step-content gs-text brutal-stack bg-white !max-w-3xl p-10" style="opacity: 1; transform: translateY(0);">
+                <div class="inline-block bg-[#FFD60A] text-black border-4 border-black px-6 py-2 text-2xl font-black mb-6 transform -rotate-2">TWIN.EXE</div>
+                <h1 class="text-7xl font-black text-black mb-6 uppercase leading-tight tracking-tighter">Stacking the<br>Live Blueprint</h1>
+                <p class="text-black text-2xl font-bold border-t-4 border-black pt-6">Scroll to paste physical layers of intelligence onto the architectural grid.</p>
+                
+                <div class="mt-8 mx-auto w-16 h-16 bg-[#0A84FF] border-4 border-black rounded-full flex items-center justify-center animate-bounce brutal-stack">
+                    <svg class="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Base Workstations (Pushed Left) -->
+        <div class="step justify-start pl-[5%] lg:pl-[10%]">
+            <div class="step-content gs-text brutal-stack">
+                <div class="w-16 h-16 bg-[#30D158] border-4 border-black rounded-full flex items-center justify-center mb-6 text-black font-black text-3xl shadow-[4px_4px_0px_#050505]">1</div>
+                <h2 class="text-4xl font-black text-black mb-4 uppercase">Zone Population</h2>
+                <p class="text-xl font-bold text-black border-l-4 border-[#30D158] pl-4">We begin by dropping workstation clusters into the open office. It stops being a void and becomes a functional map.</p>
+            </div>
+        </div>
+
+        <!-- Step 2: Conference & Kitchen (Pushed Right) -->
+        <div class="step justify-end pr-[5%] lg:pr-[10%]">
+            <div class="step-content gs-text brutal-stack">
+                <div class="w-16 h-16 bg-[#FF453A] border-4 border-black rounded-full flex items-center justify-center mb-6 text-black font-black text-3xl shadow-[4px_4px_0px_#050505]">2</div>
+                <h2 class="text-4xl font-black text-black mb-4 uppercase">Specialized Areas</h2>
+                <p class="text-xl font-bold text-black border-l-4 border-[#FF453A] pl-4">Massive boardroom tables and breakout cafe infrastructure crash into place. The grid gains purpose.</p>
+            </div>
+        </div>
+
+        <!-- Step 3: Decor & Environment (Pushed Left) -->
+        <div class="step justify-start pl-[5%] lg:pl-[10%]">
+            <div class="step-content gs-text brutal-stack">
+                <div class="w-16 h-16 bg-[#BF5AF2] border-4 border-black rounded-full flex items-center justify-center mb-6 text-black font-black text-3xl shadow-[4px_4px_0px_#050505]">3</div>
+                <h2 class="text-4xl font-black text-black mb-4 uppercase">Environmental Context</h2>
+                <p class="text-xl font-bold text-black border-l-4 border-[#BF5AF2] pl-4">Executive lounges get pop-color sofas. Ceiling fans and geometry are layered in, establishing the physical layout.</p>
+            </div>
+        </div>
+
+        <!-- Step 4: Telemetry (Pushed Right) -->
+        <div class="step justify-end pr-[5%] lg:pr-[10%]">
+            <div class="step-content gs-text brutal-stack">
+                <div class="w-16 h-16 bg-[#0A84FF] border-4 border-black rounded-full flex items-center justify-center mb-6 text-black font-black text-3xl shadow-[4px_4px_0px_#050505]">4</div>
+                <h2 class="text-4xl font-black text-black mb-4 uppercase">Life & Telemetry</h2>
+                <p class="text-xl font-bold text-black border-l-4 border-[#0A84FF] pl-4">The twin goes live. People move, fans spin, and aggressive telemetry pop-ups map physical sensors straight to the dashboard.</p>
+            </div>
+        </div>
+
+        <!-- Outro spacer -->
+        <div class="h-screen flex items-center justify-center">
+            <div class="step-content gs-text text-center brutal-stack !max-w-xl bg-[#FFD60A] p-12" style="opacity: 0;">
+                <h2 class="text-6xl font-black text-black mb-6 uppercase tracking-tighter">Own your data.</h2>
+                <button class="bg-[#FF453A] hover:bg-[#ff2015] text-black font-black py-4 px-10 rounded-full text-2xl border-4 border-black shadow-[6px_6px_0px_#050505] transition-transform active:translate-x-1 active:translate-y-1 active:shadow-[2px_2px_0px_#050505]">
+                    SCAN MY BUILDING
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Center transform origin for all our sticker groups so they scale from their own centers
+        gsap.set(".sticker-group", { transformOrigin: "50% 50%" });
+
+        // ==========================================
+        // 1. CONTINUOUS "LIVE" ANIMATIONS
+        // ==========================================
+        
+        // Ceiling Fans spinning endlessly
+        gsap.to(".spin-target", {
+            rotation: 360,
+            repeat: -1,
+            ease: "none",
+            duration: 3,
+            transformOrigin: "center center"
+        });
+
+        // People Wandering Setup (Initial positions)
+        gsap.set("#person-1", {x: 400, y: 300});
+        gsap.set("#person-2", {x: 1200, y: 700});
+        gsap.set("#person-3", {x: 1800, y: 300});
+        gsap.set("#person-4", {x: 1900, y: 1000});
+
+        // People Wandering Timelines (Endless looping)
+        gsap.to("#person-1", { x: 800, y: 800, duration: 6, ease: "sine.inOut", repeat: -1, yoyo: true });
+        gsap.to("#person-2", { x: 1100, y: 700, duration: 4, ease: "power1.inOut", repeat: -1, yoyo: true });
+        gsap.to("#person-3", { x: 1600, y: 500, duration: 5, ease: "sine.inOut", repeat: -1, yoyo: true });
+        gsap.to("#person-4", { x: 2100, y: 900, duration: 7, ease: "sine.inOut", repeat: -1, yoyo: true });
+
+        // Blinking Data Simulation
+        setInterval(() => {
+            const co2 = document.getElementById('co2-text');
+            if(co2) {
+                const val = Math.floor(Math.random() * (465 - 440 + 1) + 440);
+                co2.innerHTML = `CO2 LEVEL: <tspan font-weight="900" fill="#30D158">${val} PPM</tspan>`;
+            }
+        }, 2000);
+
+
+        // ==========================================
+        // 2. SCROLL-DRIVEN STICKER NARRATIVE
+        // ==========================================
+        
+        const visualTl = gsap.timeline({
+            scrollTrigger: {
+                trigger: "#scroll-wrapper",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1 
+            }
+        });
+
+        gsap.set(".doodle-group", { autoAlpha: 0 });
+        gsap.set(".doodle-path", { strokeDashoffset: 2000 });
+
+        // Elastic ease for the "slap/pop" effect
+        const popEase = "elastic.out(1, 0.7)";
+
+        visualTl
+            // Step 1: Slap down Workstations
+            .fromTo("#layer-workstations", 
+                { scale: 2, opacity: 0, rotation: -15 }, 
+                { scale: 1, opacity: 1, rotation: 0, duration: 1.5, ease: popEase }
+            )
+            
+            // Step 2: Slap down Conference & Cafe
+            .fromTo("#layer-conf-cafe", 
+                { scale: 2, opacity: 0, rotation: 15 }, 
+                { scale: 1, opacity: 1, rotation: 0, duration: 1.5, ease: popEase }
+            )
+
+            // Step 3: Slap down Decor, Plants, Fans
+            .fromTo("#layer-decor",
+                { scale: 2, opacity: 0, rotation: -10 },
+                { scale: 1, opacity: 1, rotation: 0, duration: 1.5, ease: popEase }
+            )
+
+            // Step 4: Fade in People & Draw Sensor Doodles aggressively
+            .to("#layer-people", { opacity: 1, duration: 0.5 }, "-=0.2")
+            .to(".doodle-group", { autoAlpha: 1, duration: 0.1 })
+            .to(".doodle-path", { strokeDashoffset: 0, duration: 1.5, ease: "power3.out" }, "-=0.1")
+            
+            .to({}, {duration: 0.5}); // Buffer at the end
+
+
+        // ==========================================
+        // 3. TEXT BOX REVEAL ANIMATIONS
+        // ==========================================
+        
+        const textElements = gsap.utils.toArray('.gs-text');
+        
+        textElements.forEach((el, index) => {
+            if(index === 0) return; // Skip intro
+
+            // Add a slight rotation for the brutalist feel as it comes in
+            const rot = index % 2 === 0 ? 2 : -2;
+
+            gsap.fromTo(el, 
+                { y: 100, opacity: 0, rotation: rot * 2 },
+                {
+                    scrollTrigger: {
+                        trigger: el,
+                        start: "top 80%",
+                        toggleActions: "play reverse play reverse" 
+                    },
+                    y: 0,
+                    opacity: 1,
+                    rotation: rot, // Stops at a slight angle
+                    duration: 0.8,
+                    ease: "back.out(1.5)"
+                }
+            );
+        });
+
+    </script>
+</body>
+</html>
